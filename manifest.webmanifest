@@ -1,0 +1,24 @@
+{
+  "name": "خدمات DZ — أدوات مجانية للجزائريين",
+  "short_name": "خدمات DZ",
+  "description": "CCP إلى RIP، معدل البكالوريا، الراتب الصافي و IRG، العملات، مواقيت الصلاة، الزكاة والمزيد.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#06120d",
+  "theme_color": "#06120d",
+  "categories": ["finance", "utilities", "education"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "CCP إلى RIP", "url": "./#/ccp", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "العملات", "url": "./#/money", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "مواقيت الصلاة", "url": "./#/prayer", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

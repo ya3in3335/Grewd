@@ -1,0 +1,64 @@
+plugins {
+    id 'com.android.application'
+}
+
+// رقم الإصدار يُقرأ من data/config.json حتى يبقى الموقع والتطبيق متطابقين
+def cfg = new groovy.json.JsonSlurper().parse(rootProject.file('../data/config.json'))
+def buildNumber = (System.getenv('GITHUB_RUN_NUMBER') ?: '1') as int
+
+android {
+    namespace 'dz.khadamat.app'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'dz.khadamat.app'
+        minSdk 24
+        targetSdk 34
+        versionCode 2000 + buildNumber
+        versionName cfg.appVersion
+        buildConfigField 'String', 'SITE_URL', '"https://' + cfg.owner.toLowerCase() + '.github.io/' + cfg.repo + '/"'
+    }
+
+    signingConfigs {
+        release {
+            // مفتاح خاص من GitHub Secrets إن وُجد، وإلا مفتاح التطوير المرفق (android/keystore/dev.jks)
+            def ks = System.getenv('KEYSTORE_FILE')
+            storeFile ks ? file(ks) : rootProject.file('keystore/dev.jks')
+            storePassword System.getenv('KEYSTORE_PASSWORD') ?: 'khadamatdz'
+            keyAlias System.getenv('KEY_ALIAS') ?: 'khadamat'
+            keyPassword System.getenv('KEY_PASSWORD') ?: 'khadamatdz'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+    }
+
+    buildFeatures { buildConfig true }
+
+    lint { checkReleaseBuilds false }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.11.0'
+    implementation 'androidx.core:core:1.13.1'
+}
+
+// نسخة من الموقع داخل التطبيق: تُستعمل إذا ما كانش أنترنت في أول فتحة
+tasks.register('bundleWeb', Copy) {
+    from(rootProject.file('..')) {
+        include 'index.html', 'manifest.webmanifest', 'assets/**', 'data/**', 'icons/*.png', 'icons/*.svg'
+    }
+    into layout.projectDirectory.dir('src/main/assets/www')
+}
+preBuild.dependsOn bundleWeb

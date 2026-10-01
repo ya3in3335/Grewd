@@ -1,5 +1,15 @@
 {
   "owner": "ya3in3335",
   "repo": "Grewd",
-  "suggestionLabel": "اقتراح"
+  "suggestionLabel": "اقتراح",
+  "telegram": "",
+  "appVersion": "2.1.0",
+  "apk": "https://github.com/ya3in3335/Grewd/releases/latest/download/khadamat-dz.apk",
+  "reviews": {
+    "ccp": "2026-10-01",
+    "bac": "2026-10-01",
+    "irg": "2026-10-01",
+    "wilayas": "2026-10-01",
+    "sos": "2026-10-01"
+  }
 }

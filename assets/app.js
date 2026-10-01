@@ -32,9 +32,42 @@
     if (navigator.clipboard) navigator.clipboard.writeText(txt).then(() => toast("تم النسخ ✓"), () => toast(txt));
     else toast(txt);
   }
+  // جسر تطبيق أندرويد (WebView) — موجود فقط داخل التطبيق
+  const NATIVE = window.DZApp || null;
   function printHTML(html) {
     $("#printArea").innerHTML = '<div dir="rtl" style="font-family:Tajawal,sans-serif;padding:20px">' + html + "</div>";
-    window.print();
+    if (NATIVE && NATIVE.print) setTimeout(() => NATIVE.print(), 60);
+    else window.print();
+  }
+  function saveFile(name, text, mime) {
+    if (NATIVE && NATIVE.saveFile) { NATIVE.saveFile(name, text, mime); return; }
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([text], { type: mime }));
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+  function shareText(txt) {
+    if (NATIVE && NATIVE.share) NATIVE.share(txt);
+    else if (navigator.share) navigator.share({ text: txt }).catch(() => {});
+    else copyText(txt);
+  }
+  const fdate = (d) => { d = new Date(d); return isNaN(d) ? "—" : d.toLocaleDateString("fr-FR") + " " + d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }); };
+  const ago = (d) => {
+    const m = Math.round((Date.now() - new Date(d)) / 60000);
+    if (!isFinite(m)) return "";
+    if (m < 2) return "دركا";
+    if (m < 60) return "قبل " + m + " دقيقة";
+    if (m < 1440) return "قبل " + Math.round(m / 60) + " ساعة";
+    return "قبل " + Math.round(m / 1440) + " يوم";
+  };
+  // سطر "آخر تحديث" تحت كل أداة
+  function setUpd(view, html) {
+    const v = $('.view[data-view="' + view + '"] .wrap');
+    if (!v) return;
+    let el = $(".updated", v);
+    if (!el) { el = document.createElement("div"); el.className = "updated"; v.appendChild(el); }
+    el.innerHTML = html;
   }
   function persist(ids) { // يحفظ قيم الحقول في الجهاز
     ids.forEach((id) => {
@@ -46,12 +79,21 @@
   }
 
   /* ================= theme ================= */
-  const savedTheme = store("theme");
-  if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+  const mq = window.matchMedia ? matchMedia("(prefers-color-scheme: light)") : null;
+  function applyTheme() {
+    const mode = store("theme") || "dark";
+    const t = mode === "auto" ? (mq && mq.matches ? "light" : "dark") : mode;
+    document.documentElement.dataset.theme = t;
+    const meta = $('meta[name="theme-color"]');
+    if (meta) meta.content = t === "dark" ? "#06120d" : "#f5f1e6";
+    if (NATIVE && NATIVE.setDark) NATIVE.setDark(t === "dark");
+  }
+  function applySize() { document.documentElement.dataset.size = store("size") || "md"; }
+  applyTheme(); applySize();
+  if (mq && mq.addEventListener) mq.addEventListener("change", applyTheme);
   $("#themeBtn").addEventListener("click", () => {
-    const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
-    document.documentElement.dataset.theme = next;
-    store("theme", next);
+    store("theme", document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+    applyTheme(); syncSettings();
   });
 
   /* ================= history ================= */
@@ -104,7 +146,8 @@
     { id: "age", ic: "🎂", t: "العمر والتواريخ", d: "عمرك بالضبط + التاريخ الهجري", k: "عمر age سن ميلاد تاريخ هجري date ايام" },
     { id: "wilayas", ic: "🗺️", t: "أرقام الولايات", d: "رقم الترقيم والرمز البريدي", k: "ولاية wilaya ولايات matricule ترقيم code postal بريدي رقم" },
     { id: "sos", ic: "🚨", t: "أرقام الطوارئ", d: "الحماية المدنية، الشرطة، الدرك", k: "طوارئ urgence شرطة police درك حماية مدنية اسعاف إسعاف نجدة" },
-    { id: "suggest", ic: "💬", t: "اقترح أداة", d: "مشكل ما لقيتلوش حل؟ قولّنا", k: "اقتراح suggestion مشكل فكرة" }
+    { id: "suggest", ic: "💬", t: "اقترح أداة", d: "مشكل ما لقيتلوش حل؟ قولّنا", k: "اقتراح suggestion مشكل فكرة" },
+    { id: "settings", ic: "⚙️", t: "الإعدادات", d: "المظهر، الخط، الولاية، والمطوّر", k: "اعدادات إعدادات settings مظهر خط تيليجرام telegram مطور تواصل تطبيق" }
   ];
   const norm = (s) => s.toLowerCase().replace(/[أإآ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").replace(/[éèê]/g, "e");
 
@@ -176,8 +219,7 @@
   $('[data-copy="ripOut"]').addEventListener("click", (e) => { e.stopPropagation(); copyText($("#ripOut").dataset.raw); });
   $("#ccpShare").addEventListener("click", () => {
     const txt = "RIP: " + $("#ripOut").dataset.raw + "\nCCP: " + $("#ccpOut").textContent + " clé " + $("#ccpKey").textContent;
-    if (navigator.share) navigator.share({ text: txt }).catch(() => {});
-    else copyText(txt);
+    shareText(txt);
   });
 
   let bulkRows = [];
@@ -198,11 +240,7 @@
     const q = (v) => '"' + String(v).replace(/"/g, '""') + '"';
     const csv = ["Nom;CCP;Cle;RIP"].concat(bulkRows.map((r) =>
       [r.name, r.r ? r.r.ccp : r.input, r.r ? r.r.key : "", r.r ? "'" + r.r.rip : "INVALIDE"].map(q).join(";"))).join("\r\n");
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }));
-    a.download = "rip-" + new Date().toISOString().slice(0, 10) + ".csv";
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    saveFile("rip-" + new Date().toISOString().slice(0, 10) + ".csv", "\ufeff" + csv, "text/csv;charset=utf-8");
   });
   $("#bulkPrint").addEventListener("click", () => {
     printHTML("<h1>قائمة أرقام RIP</h1><p>" + new Date().toLocaleDateString("fr-FR") + "</p>" + $("#bulkTable").outerHTML.replace(' class="hidden"', ""));
@@ -338,7 +376,7 @@
   function loadPar() { $("#parInput").value = store("par:" + $("#curSel").value) || ""; $("#parCode").textContent = $("#curSel").value; }
   function calcMoney() {
     const c = $("#curSel").value, a = num($("#amtInput").value) || 0;
-    const off = rates && rates[c] ? 1 / rates[c] : NaN;
+    const off = rates && rates[c] ? rates[c] : NaN;
     const par = num($("#parInput").value);
     const conv = (rate) => dir === "toDzd" ? dzd(a * rate) : fmt(a / rate) + " " + c;
     $("#mOfficial").textContent = isFinite(off) ? conv(off) : "—";
@@ -354,27 +392,48 @@
     $$("#dirToggle button").forEach((x) => x.classList.toggle("on", x === b));
     dir = b.dataset.dir; calcMoney();
   });
-  async function loadRates() {
-    const cached = store("rates");
-    if (cached && Date.now() - cached.at < 6 * 3600e3) { rates = cached.rates; showRatesNote(cached.updated); calcMoney(); return; }
+  // المصادر بالترتيب: API مباشر ← نسخة GitHub (data/live.json، تتحدث كل 6 ساعات) ← آخر نسخة محفوظة في الجهاز
+  let ratesMeta = null, liveCache = null;
+  async function getLive() {
+    if (!liveCache) liveCache = getJSON("data/live.json").catch(() => null);
+    return liveCache;
+  }
+  async function loadRates(force) {
+    const cached = store("rates2");
+    if (!force && cached && Date.now() - cached.at < 3 * 3600e3) { useRates(cached, false); return; }
+    let got = null;
     try {
       const d = await getJSON("https://open.er-api.com/v6/latest/DZD");
       if (d.result !== "success") throw 0;
-      rates = d.rates;
-      store("rates", { at: Date.now(), rates, updated: d.time_last_update_utc });
-      showRatesNote(d.time_last_update_utc);
-    } catch (e) {
-      if (cached) { rates = cached.rates; showRatesNote(cached.updated, true); }
-      else $("#ratesNote").textContent = "ما قدرناش نجيبو السعر الرسمي (تحقق من الأنترنت). تقدر تستعمل سعر السكوار برك.";
+      const dzdPer = {};
+      CUR.forEach(([c]) => { if (d.rates[c]) dzdPer[c] = 1 / d.rates[c]; });
+      got = { dzdPer, updated: d.time_last_update_unix * 1000, source: "ExchangeRate-API — مباشر" };
+    } catch (e) {}
+    if (!got) {
+      const l = await getLive();
+      if (l && l.currency) got = { dzdPer: l.currency.dzdPer, updated: Date.parse(l.currency.updated), source: "نسخة GitHub (تتحدث كل 6 ساعات)" };
     }
+    if (got) { got.at = Date.now(); store("rates2", got); useRates(got, false); }
+    else if (cached) useRates(cached, true);
+    else { setUpd("money", "⚠️ ما قدرناش نجيبو السعر الرسمي — تحقق من الأنترنت. سعر السكوار يخدم عادي."); }
+    if (force) toast(got ? "تحدّثت الأسعار ✓" : "ما كانش اتصال — بقات آخر نسخة");
+  }
+  function useRates(r, stale) {
+    rates = r.dzdPer; ratesMeta = r;
     calcMoney();
+    setUpd("money", "🔄 <b>آخر تحديث للسعر الرسمي:</b> " + fdate(r.updated) + " (" + ago(r.updated) + ") · المصدر: " + esc(r.source) +
+      (stale ? " · <b>نسخة محفوظة بلا أنترنت</b>" : "") + ' <button class="link-btn" data-act="refresh-rates">↻ حدّث دركا</button>');
+    $("#ratesNote").innerHTML = "<b>السعر الرسمي</b> هو سعر الصرف الدولي المرجعي، ويقدر يختلف شوية على سعر بنك الجزائر اليومي. <b>سعر السكوار</b> تكتبو انت ويتحفظ في جهازك.";
+    const eur = rates.EUR;
+    if (eur) { const c = $("#todayEur"); if (c) c.textContent = "💶 1€ = " + fmt(eur) + " دج (رسمي)"; }
   }
-  function showRatesNote(updated, stale) {
-    const d = new Date(updated);
-    $("#ratesNote").innerHTML = "<b>السعر الرسمي:</b> سعر الصرف الدولي المرجعي (ExchangeRate-API)، آخر تحديث " +
-      (isNaN(d) ? "" : d.toLocaleDateString("fr-FR")) + (stale ? " — نسخة محفوظة" : "") +
-      ". قد يختلف قليلاً عن سعر بنك الجزائر اليومي. <b>سعر السكوار</b> يبقى محفوظ في جهازك.";
-  }
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-act]");
+    if (!b) return;
+    if (b.dataset.act === "refresh-rates") loadRates(true);
+    if (b.dataset.act === "refresh-gold") loadGold(true);
+    if (b.dataset.act === "use-gold" && goldMeta) { $("#zGold").value = goldMeta.k24; store("f:zGold", String(goldMeta.k24)); calcZakat(); }
+  });
 
   /* ================= Prayer times ================= */
   // خوارزمية فلكية (على نهج PrayTimes.org) بمعايير الجزائر: الفجر 18°، العشاء 17°، العصر = ظل المثل
@@ -435,6 +494,7 @@
     const s = Math.max(0, Math.round(diff * 3600));
     const cd = [Math.floor(s / 3600), Math.floor(s / 60) % 60, s % 60].map((x) => String(x).padStart(2, "0")).join(":");
     $("#nextPrayer").innerHTML = "<small>الصلاة القادمة — " + esc(place.name) + "</small><b>" + PNAMES[next] + "</b><div class=\"cd\" dir=\"ltr\">" + cd + "</div>";
+    setUpd("prayer", "🕌 <b>محسوبة لتاريخ اليوم:</b> " + dzNow.toLocaleDateString("fr-FR") + " · تتحدث وحدها كل يوم · المعايير: الفجر 18°، العشاء 17° (وزارة الشؤون الدينية)");
     $("#prayers").innerHTML = Object.keys(PNAMES).map((k) => '<div class="' + (k === next ? "now" : "") + '"><small>' + PNAMES[k] + '</small><b dir="ltr">' + hm(today[k]) + "</b></div>").join("");
   }
   function setPlace(p) {
@@ -473,6 +533,29 @@
     }
   }
   zIds.forEach((id) => $("#" + id).addEventListener("input", calcZakat));
+  let goldMeta = null;
+  async function loadGold(force) {
+    const cached = store("gold");
+    let g = (!force && cached && Date.now() - cached.at < 3 * 3600e3) ? cached : null;
+    if (!g) {
+      try {
+        const [x, l] = await Promise.all([getJSON("https://api.gold-api.com/price/XAU"), rates ? null : getLive()]);
+        const usd = (rates && rates.USD) || (l && l.currency && l.currency.dzdPer.USD) || (cached && cached.usd);
+        if (!(x.price > 0) || !usd) throw 0;
+        g = { k24: Math.round(x.price / 31.1034768 * usd), updated: x.updatedAt || Date.now(), usd, source: "gold-api.com — مباشر", at: Date.now() };
+      } catch (e) {
+        const l = await getLive();
+        if (l && l.gold) g = { k24: l.gold.dzdPerGram.k24, updated: l.gold.updated, source: "نسخة GitHub", at: Date.now() };
+      }
+      if (g) store("gold", g); else g = cached;
+    }
+    if (!g) { setUpd("zakat", "⚠️ ما قدرناش نجيبو سعر الذهب — اكتبو بيدك."); return; }
+    goldMeta = g;
+    if (!$("#zGold").value) { $("#zGold").value = g.k24; calcZakat(); }
+    setUpd("zakat", "🔄 <b>سعر غرام الذهب عيار 24 (السعر العالمي):</b> " + dzd(g.k24, 0) + " · آخر تحديث " + fdate(g.updated) + " (" + ago(g.updated) + ") · " + esc(g.source) +
+      '<br>السعر عند الصايغ في الجزائر يختلف عادة. <button class="link-btn" data-act="use-gold">استعمل هذا السعر</button> <button class="link-btn" data-act="refresh-gold">↻ حدّث</button>');
+    if (force) toast("تحدّث سعر الذهب ✓");
+  }
 
   /* ================= Loan ================= */
   let loanMode = "flat";
@@ -584,7 +667,7 @@
       [["رمضان", ram], ["عيد الفطر", eid], ["عيد الأضحى", adha]].sort((a, b) => a[1] - b[1]).slice(0, 1)
         .forEach(([n, d]) => parts.push("⏳ " + n + " بعد ~" + d + " يوم"));
     } catch (e) {}
-    $("#today").innerHTML = parts.map((p) => "<span>" + esc(p) + "</span>").join("");
+    $("#today").innerHTML = parts.map((p) => "<span>" + esc(p) + "</span>").join("") + '<span id="todayEur" class="chip-live"></span>';
   }
   function nextHijri(month, day) { // عدد الأيام حتى تاريخ هجري (أم القرى — تقريبي ±1 يوم حسب رؤية الهلال)
     const f = new Intl.DateTimeFormat("en-u-ca-islamic-umalqura-nu-latn", { month: "numeric", day: "numeric" });
@@ -597,11 +680,77 @@
     throw 0;
   }
 
+  /* ================= Settings ================= */
+  function seg(id, key, def, apply) {
+    const el = $("#" + id);
+    el.addEventListener("click", (e) => {
+      const b = e.target.closest("button"); if (!b) return;
+      store(key, b.dataset.v); apply(); syncSettings();
+    });
+    return () => $$("button", el).forEach((b) => b.classList.toggle("on", b.dataset.v === (store(key) || def)));
+  }
+  const syncTheme = seg("setTheme", "theme", "dark", applyTheme);
+  const syncSize = seg("setSize", "size", "md", applySize);
+  function syncSettings() {
+    syncTheme(); syncSize();
+    if (place && place.id) $("#setWilaya").value = place.id;
+    $("#setCur").value = $("#curSel").value;
+    const r = store("rates2"), g = store("gold");
+    $("#setData").innerHTML =
+      "<li><span>💶 أسعار العملات</span><small>" + (r ? fdate(r.updated) + " · " + ago(r.updated) : "ما تحمّلتش بعد") + "</small></li>" +
+      "<li><span>🪙 سعر الذهب</span><small>" + (g ? fdate(g.updated) + " · " + ago(g.updated) : "ما تحمّلش بعد") + "</small></li>" +
+      "<li><span>🕌 مواقيت الصلاة</span><small>تتحسب وحدها كل يوم</small></li>" +
+      "<li><span>📚 البكالوريا · IRG · الولايات</span><small>تتحدث من GitHub في كل فتحة</small></li>";
+  }
+  $("#setCur").innerHTML = $("#curSel").innerHTML;
+  $("#setWilaya").addEventListener("change", () => { $("#wilayaSel").value = $("#setWilaya").value; $("#wilayaSel").dispatchEvent(new Event("change")); toast("تحفظت ✓"); });
+  $("#setCur").addEventListener("change", () => { $("#curSel").value = $("#setCur").value; $("#curSel").dispatchEvent(new Event("change")); toast("تحفظت ✓"); });
+  $("#setRefresh").addEventListener("click", async () => {
+    liveCache = null;
+    await Promise.all([loadRates(true), loadGold(true)]);
+    syncSettings();
+  });
+  $("#setClear").addEventListener("click", () => {
+    if (!confirm("نمسحو كل بياناتك (العلامات، السجل، الإعدادات)؟")) return;
+    try { Object.keys(localStorage).filter((k) => k.startsWith("dz:")).forEach((k) => localStorage.removeItem(k)); } catch (e) {}
+    if (window.caches) caches.keys().then((ks) => ks.forEach((k) => caches.delete(k)));
+    toast("تمسحت ✓"); setTimeout(() => location.reload(), 700);
+  });
+  $("#setShare").addEventListener("click", () => shareText("خدمات DZ — CCP إلى RIP، معدل الباك، الراتب الصافي، العملات، مواقيت الصلاة… مجاناً:\n" + SITE));
+  const SITE = "https://ya3in3335.github.io/Grewd/";
+  function renderAbout() {
+    const tg = (cfg.telegram || "").replace(/^@/, "").trim();
+    const inApp = !!NATIVE;
+    const appVer = inApp && NATIVE.version ? NATIVE.version() : null;
+    $("#aboutVer").textContent = "الإصدار " + (appVer || cfg.appVersion || "—") + (inApp ? " · تطبيق أندرويد" : " · نسخة الويب");
+    $("#devTg").classList.toggle("hidden", !tg);
+    $$("[data-tg]").forEach((a) => { a.href = "https://t.me/" + tg; a.classList.toggle("hidden", !tg); });
+    $("#devGh").href = "https://github.com/" + cfg.owner + "/" + cfg.repo;
+    const apk = cfg.apk || "";
+    const android = /Android/i.test(navigator.userAgent);
+    $$("[data-apk]").forEach((a) => { a.href = apk; a.classList.toggle("hidden", !apk || inApp); });
+    $("#appBanner").classList.toggle("hidden", !apk || inApp || !android);
+    if (appVer && cfg.appVersion && cmpVer(cfg.appVersion, appVer) > 0) {
+      $("#updBanner").classList.remove("hidden");
+      $("#updBanner a").href = apk;
+      $("#updVer").textContent = cfg.appVersion;
+    }
+  }
+  const cmpVer = (a, b) => { const x = a.split(".").map(Number), y = b.split(".").map(Number); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) - (y[i] || 0); } return 0; };
+
+  // PWA
+  let deferredInstall = null;
+  window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferredInstall = e; $("#pwaBtn").classList.remove("hidden"); });
+  $("#pwaBtn").addEventListener("click", () => { if (deferredInstall) { deferredInstall.prompt(); deferredInstall = null; $("#pwaBtn").classList.add("hidden"); } });
+  if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+
   /* ================= boot ================= */
   onEnter.history = renderHistory;
   onEnter.suggest = loadSuggestions;
-  onEnter.money = () => { if (!rates) loadRates(); };
+  onEnter.money = () => loadRates(false);
+  onEnter.zakat = () => loadGold(false);
   onEnter.prayer = () => { if (place) renderPrayer(); };
+  onEnter.settings = syncSettings;
 
   renderGrid("");
   renderToday();
@@ -612,11 +761,22 @@
   (async function boot() {
     try { Object.assign(cfg, await getJSON("data/config.json")); } catch (e) {}
     $("#repoLink").href = "https://github.com/" + cfg.owner + "/" + cfg.repo;
+    const rv = cfg.reviews || {};
+    setUpd("ccp", "✓ <b>طريقة الحساب مراجَعة في:</b> " + (rv.ccp || "—") + " · مطابقة لرقم RIP حقيقي. الحساب يصير في جهازك وما يحتاجش أنترنت.");
+    setUpd("salary", "📜 <b>جدول IRG:</b> قانون المالية 2022 (ساري في 2026) · <b>آخر مراجعة:</b> " + (rv.irg || "—") + ". إذا تبدّل القانون، يتحدّث هنا وحدو.");
+    setUpd("wilayas", "🗺️ 58 ولاية · <b>آخر مراجعة:</b> " + (rv.wilayas || "—"));
+    setUpd("sos", "☎️ <b>آخر مراجعة للأرقام:</b> " + (rv.sos || "—"));
+    setUpd("percent", "🧮 حسابات رياضية بحتة — ما تحتاجش تحديث.");
+    setUpd("loan", "🧮 حسابات رياضية — النسب تكتبها انت حسب العرض اللي عندك.");
+    setUpd("age", "📅 التاريخ الهجري حسب تقويم أم القرى — ممكن يختلف بيوم على رؤية الهلال في الجزائر.");
+    renderAbout();
+    loadRates(false);
 
     getJSON("data/bac.json").then((d) => {
       bac = d;
       stream = bac.streams.find((s) => s.id === store("bac-stream")) || bac.streams[0];
       renderStreams(); renderBac();
+      setUpd("bac", "📚 <b>المعاملات:</b> " + esc(bac.source) + " · <b>آخر مراجعة:</b> " + esc(bac.reviewed || (cfg.reviews || {}).bac || "—"));
     }).catch(() => toast("ما قدرناش نحمّلو بيانات البكالوريا"));
 
     getJSON("data/irg.json").then((d) => { irg = d; doSalary(false); }).catch(() => toast("ما قدرناش نحمّلو جدول IRG"));
@@ -628,11 +788,12 @@
       const p = store("place") || { id: 16, name: "الجزائر", lat: 36.754, lng: 3.059 };
       if (p.id) $("#wilayaSel").value = p.id;
       setPlace(p);
+      $("#setWilaya").innerHTML = $("#wilayaSel").innerHTML;
+      syncSettings();
     }).catch(() => toast("ما قدرناش نحمّلو قائمة الولايات"));
 
-    if (location.hash.includes("money")) loadRates();
   })();
 
   // للاختبار
-  window.DZ = { convertCCP, prayerTimes, salary: (g, s) => salary(g, s) };
+  window.DZ = { convertCCP, prayerTimes, salary: (g, s) => salary(g, s), go: (h) => { location.hash = h; } };
 })();
