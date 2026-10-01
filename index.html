@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>خدمات DZ — أدوات مجانية للجزائريين</title>
+  <meta name="description" content="حوّل رقم CCP إلى RIP، احسب معدل البكالوريا، احسب راتبك الصافي و IRG، وحوّل العملات — مجاناً وبكل بساطة.">
+  <meta name="theme-color" content="#0b1f17">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230b1f17'/><text x='50' y='66' font-size='46' text-anchor='middle' fill='%23d4af37' font-family='Arial' font-weight='bold'>DZ</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="#home"><span class="logo">DZ</span> خدمات <b>DZ</b></a>
+      <nav class="nav">
+        <a href="#ccp">CCP ⇄ RIP</a>
+        <a href="#bac">البكالوريا</a>
+        <a href="#salary">الراتب و IRG</a>
+        <a href="#money">العملات</a>
+        <a href="#pro" class="pro-link">برو ✦</a>
+      </nav>
+      <button class="theme-btn" id="themeBtn" aria-label="تبديل الوضع">◐</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="home">
+      <div class="wrap">
+        <span class="chip">مجاني 100% · بدون تسجيل · يعمل على الهاتف</span>
+        <h1>كل الحسابات اللي <span class="gold">تحوّس عليها</span><br>في مكان واحد.</h1>
+        <p class="lead">رقم RIP تاع بريد الجزائر، معدل الباك، الراتب الصافي بعد IRG، وسعر الأورو في السكوار — في ثواني.</p>
+        <div class="hero-cards">
+          <a class="hcard" href="#ccp"><i>🏦</i><b>CCP إلى RIP</b><small>للبريدي موب والتحويلات</small></a>
+          <a class="hcard" href="#bac"><i>🎓</i><b>معدل البكالوريا</b><small>كل الشعب والمعاملات</small></a>
+          <a class="hcard" href="#salary"><i>💼</i><b>الراتب الصافي</b><small>CNAS + IRG 2022</small></a>
+          <a class="hcard" href="#money"><i>💶</i><b>تحويل العملات</b><small>رسمي وسكوار</small></a>
+        </div>
+      </div>
+    </section>
+
+    <!-- CCP -> RIP -->
+    <section class="tool" id="ccp">
+      <div class="wrap">
+        <div class="tool-head"><i>🏦</i><div><h2>تحويل رقم CCP إلى RIP</h2><p>اكتب رقم حسابك البريدي الجاري (بدون المفتاح) ونعطيك الـ RIP كامل، ومفتاح CCP.</p></div></div>
+        <div class="card">
+          <label for="ccpInput">رقم CCP</label>
+          <div class="row">
+            <input id="ccpInput" inputmode="numeric" maxlength="10" placeholder="مثال: 0012345678" autocomplete="off">
+            <button class="btn" id="ccpBtn">احسب</button>
+          </div>
+          <div class="result hidden" id="ccpResult">
+            <div class="res-line"><span>مفتاح CCP</span><b id="ccpKey">—</b></div>
+            <div class="res-line big"><span>رقم RIP</span><b id="ripOut" dir="ltr">—</b><button class="copy" data-copy="ripOut">نسخ</button></div>
+            <div class="res-line"><span>الصيغة الكاملة</span><b id="ccpFull" dir="ltr">—</b><button class="copy" data-copy="ccpFull">نسخ</button></div>
+          </div>
+          <p class="hint">⚠️ تأكّد دائماً من RIP في كشف الحساب أو تطبيق بريدي موب قبل أي تحويل مالي.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- BAC -->
+    <section class="tool" id="bac">
+      <div class="wrap">
+        <div class="tool-head"><i>🎓</i><div><h2>حساب معدل البكالوريا</h2><p>اختر شعبتك وادخل علاماتك. المعاملات تقدر تبدّلها إذا لزم.</p></div></div>
+        <div class="card">
+          <label for="streamSel">الشعبة</label>
+          <select id="streamSel"></select>
+          <div class="subjects" id="subjects"></div>
+          <div class="result" id="bacResult">
+            <div class="avg-circle"><b id="bacAvg">—</b><small>/ 20</small></div>
+            <div><div class="mention" id="bacMention">ادخل علاماتك</div><div class="hint" id="bacDetail"></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Salary -->
+    <section class="tool" id="salary">
+      <div class="wrap">
+        <div class="tool-head"><i>💼</i><div><h2>الراتب الصافي و IRG</h2><p>من الراتب الخام الشهري إلى الصافي: اقتطاع الضمان الاجتماعي ثم الضريبة على الدخل.</p></div></div>
+        <div class="card">
+          <label for="grossInput">الراتب الخام الشهري (دج)</label>
+          <div class="row">
+            <input id="grossInput" inputmode="decimal" placeholder="مثال: 60000">
+            <button class="btn" id="salaryBtn">احسب</button>
+          </div>
+          <div class="result hidden" id="salaryResult">
+            <div class="res-line"><span>اقتطاع CNAS (9%)</span><b id="sCnas">—</b></div>
+            <div class="res-line"><span>الأجر الخاضع للضريبة</span><b id="sTaxable">—</b></div>
+            <div class="res-line"><span>IRG</span><b id="sIrg">—</b></div>
+            <div class="res-line big"><span>الراتب الصافي</span><b id="sNet">—</b></div>
+            <div class="bar"><div id="barNet"></div><div id="barCnas"></div><div id="barIrg"></div></div>
+            <div class="legend"><span class="l-net">صافي</span><span class="l-cnas">CNAS</span><span class="l-irg">IRG</span></div>
+          </div>
+          <p class="hint">حسب جدول قانون المالية 2022 (إعفاء كلي حتى 30 000 دج). لا يشمل المنح الخاصة أو حالات المتقاعدين وذوي الاحتياجات.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Money -->
+    <section class="tool" id="money">
+      <div class="wrap">
+        <div class="tool-head"><i>💶</i><div><h2>تحويل العملات إلى الدينار</h2><p>السعر الرسمي (البنك) والسعر الموازي (السكوار).</p></div></div>
+        <div class="card">
+          <div class="grid2">
+            <div><label for="amtInput">المبلغ</label><input id="amtInput" inputmode="decimal" value="100"></div>
+            <div><label for="curSel">العملة</label><select id="curSel"></select></div>
+          </div>
+          <div class="toggle"><button class="on" data-dir="toDzd">← إلى الدينار</button><button data-dir="fromDzd">من الدينار →</button></div>
+          <div class="result" id="moneyResult">
+            <div class="res-line"><span>السعر الرسمي</span><b id="mOfficial">—</b></div>
+            <div class="res-line big"><span>السكوار</span><b id="mParallel">—</b></div>
+          </div>
+          <p class="hint" id="ratesNote"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRO -->
+    <section class="tool pro" id="pro">
+      <div class="wrap">
+        <div class="tool-head"><i>✦</i><div><h2>أدوات برو <span class="badge">PRO</span></h2><p>للمحاسبين، أصحاب المحلات، والجمعيات: تحويل بالجملة، تصدير، وسجل محفوظ.</p></div></div>
+
+        <div class="card">
+          <h3>تحويل CCP → RIP بالجملة</h3>
+          <p class="hint">ضع رقم CCP واحد في كل سطر (يمكنك إضافة الاسم بعد فاصلة: <code>0012345678, محمد</code>).</p>
+          <textarea id="bulkInput" rows="6" placeholder="0012345678, محمد&#10;0098765432, فاطمة"></textarea>
+          <div class="row">
+            <button class="btn" id="bulkBtn">حوّل الكل</button>
+            <button class="btn ghost" id="bulkCsv" disabled>تحميل CSV (Excel)</button>
+            <button class="btn ghost" id="bulkPrint" disabled>طباعة / PDF</button>
+          </div>
+          <div class="table-wrap"><table id="bulkTable" class="hidden"><thead><tr><th>#</th><th>الاسم</th><th>CCP</th><th>المفتاح</th><th>RIP</th></tr></thead><tbody></tbody></table></div>
+        </div>
+
+        <div class="card">
+          <h3>كشف راتب قابل للطباعة</h3>
+          <div class="grid2">
+            <div><label for="psName">اسم الموظف</label><input id="psName" placeholder="الاسم واللقب"></div>
+            <div><label for="psMonth">الشهر</label><input id="psMonth" type="month"></div>
+          </div>
+          <div class="grid2">
+            <div><label for="psGross">الخام (دج)</label><input id="psGross" inputmode="decimal" placeholder="60000"></div>
+            <div><label for="psBonus">منح خاضعة (دج)</label><input id="psBonus" inputmode="decimal" placeholder="0"></div>
+          </div>
+          <button class="btn" id="psBtn">ولّد كشف الراتب</button>
+        </div>
+
+        <div class="card">
+          <h3>سجل حساباتك</h3>
+          <p class="hint">يتحفظ في جهازك فقط — حتى واحد ما يشوفه.</p>
+          <ul id="history" class="history"></ul>
+          <button class="btn ghost small" id="clearHist">مسح السجل</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Community (GitHub backend) -->
+    <section class="tool" id="community">
+      <div class="wrap">
+        <div class="tool-head"><i>💬</i><div><h2>عندك مشكل ما لقيتلوش حل؟</h2><p>اقترح أداة جديدة. الاقتراحات تتسجّل علناً في GitHub ونزيدو الأكثر طلباً.</p></div></div>
+        <div class="card">
+          <label for="sugTitle">الاقتراح</label>
+          <input id="sugTitle" placeholder="مثال: حاسبة معدل شهادة التعليم المتوسط BEM">
+          <label for="sugBody">تفاصيل (اختياري)</label>
+          <textarea id="sugBody" rows="3"></textarea>
+          <button class="btn" id="sugBtn">أرسل عبر GitHub</button>
+          <h3 class="mt">آخر الاقتراحات</h3>
+          <ul id="sugList" class="sug-list"><li class="hint">جاري التحميل…</li></ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <p><b>خدمات DZ</b> — مشروع مفتوح المصدر، البيانات والاقتراحات مخزّنة في <a id="repoLink" href="#" target="_blank" rel="noopener">GitHub</a>.</p>
+      <p class="hint">النتائج للاسترشاد فقط ولا تعوّض الوثائق الرسمية.</p>
+    </div>
+  </footer>
+
+  <div id="toast" class="toast"></div>
+  <div id="printArea" class="print-area"></div>
+  <script src="assets/app.js"></script>
+</body>
+</html>

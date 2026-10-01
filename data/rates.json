@@ -1,0 +1,14 @@
+{
+  "updated": "2026-10-01",
+  "note": "قيم تقريبية للتوضيح فقط. صاحب الموقع يحدّثها بتعديل هذا الملف على GitHub.",
+  "currencies": [
+    { "code": "EUR", "name": "اليورو", "flag": "🇪🇺", "official": 150.0, "parallel": 255.0 },
+    { "code": "USD", "name": "الدولار الأمريكي", "flag": "🇺🇸", "official": 133.0, "parallel": 230.0 },
+    { "code": "GBP", "name": "الجنيه الإسترليني", "flag": "🇬🇧", "official": 175.0, "parallel": 295.0 },
+    { "code": "CAD", "name": "الدولار الكندي", "flag": "🇨🇦", "official": 97.0, "parallel": 165.0 },
+    { "code": "TRY", "name": "الليرة التركية", "flag": "🇹🇷", "official": 3.4, "parallel": 5.8 },
+    { "code": "SAR", "name": "الريال السعودي", "flag": "🇸🇦", "official": 35.5, "parallel": 61.0 },
+    { "code": "AED", "name": "الدرهم الإماراتي", "flag": "🇦🇪", "official": 36.2, "parallel": 62.0 },
+    { "code": "TND", "name": "الدينار التونسي", "flag": "🇹🇳", "official": 44.0, "parallel": 75.0 }
+  ]
+}
