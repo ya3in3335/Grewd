@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-31T05:55:03.673Z",
+  "generated": "2026-10-31T12:45:26.251Z",
   "currency": {
     "source": "ExchangeRate-API",
     "updated": "2026-10-31T00:02:31.000Z",
@@ -20,7 +20,7 @@
   },
   "gold": {
     "source": "gold-api.com (السعر العالمي)",
-    "updated": "2026-10-31T05:54:57Z",
+    "updated": "2026-10-31T12:44:58Z",
     "usdPerOz": 3876.399902,
     "dzdPerGram": {
       "k24": 16855,
